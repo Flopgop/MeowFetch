@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.flamgop"
-version = "1.0-SNAPSHOT"
+version = "3.0"
 
 repositories {
     maven("https://packages.jetbrains.team/maven/p/kpm/public/")

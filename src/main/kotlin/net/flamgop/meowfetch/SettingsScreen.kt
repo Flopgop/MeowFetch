@@ -169,7 +169,7 @@ fun LogLevelSelector(
     Box {
         Box(modifier = Modifier.clickable {
             expanded = true
-        }) {
+        }.heightIn(min = 36.dp)) {
             TextFieldDefaults.OutlinedTextFieldDecorationBox(
                 value = ".",
                 visualTransformation = VisualTransformation.None,

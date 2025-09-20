@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dadb.Dadb
@@ -11,19 +12,39 @@ import kotlinx.coroutines.*
 import java.awt.Desktop
 import java.io.File
 
+private fun StringBuilder.extractCompleteLines(): List<String> {
+    val text = toString()
+    val lines = text.replace("\r\n", "\n").split("\n")
+    clear()
+
+    return if (text.endsWith("\n")) {
+        // all lines are complete
+        lines.filter { it.isNotEmpty() } // drop empty if you want
+    } else {
+        // last element is incomplete, keep it
+        val complete = lines.dropLast(1)
+        append(lines.last()) // put remainder back
+        complete
+    }
+}
+
 class AppController {
     var snackbarState = SnackbarHostState()
     var devices by mutableStateOf(listOf<Dadb>())
     var selectedDevice by mutableStateOf(0)
-    var terminalText by mutableStateOf("> Hello World! You're using Meowfetch v3.0! :3\n")
+
+    var terminalLines = mutableStateListOf<TerminalLine>(StatusLine("Hello World! You're using Meowfetch v3.0! :3"))
+
+    var saving by mutableStateOf(false)
     var logging by mutableStateOf(false)
     val settingsState = SettingsState()
     private var logJob: Job? = null
+    private var saveLogJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
     fun refreshDevices() {
         devices = Dadb.list()
-        terminalText += if (devices.isEmpty()) "> No Devices Found\n" else "> ${devices.size} Device(s) Found\n"
+        terminalLines += StatusLine(if (devices.isEmpty()) "No Devices Found" else "${devices.size} Device(s) Found")
     }
 
     fun selectDevice(device: Int) {
@@ -34,22 +55,41 @@ class AppController {
         logging = !logging
         if (!logging) {
             logJob?.cancel()
-            val file = saveTerminal()
-            terminalText += "> Stopped Logging\n"
+            saving = true
+            // display snackbar with indefinite duration that just says "Saving..."
             scope.launch(Dispatchers.IO) {
-                val result = snackbarState.showSnackbar(
-                    message ="Saved file to ${file.absolutePath}",
-                    actionLabel = "Open",
-                    duration = SnackbarDuration.Short,
-                )
-                if (result == SnackbarResult.ActionPerformed) {
+                saveLogJob?.cancelAndJoin()
+                val savingSnackbarJob = withContext(Dispatchers.Main) {
+                    scope.launch {
+                        snackbarState.showSnackbar(
+                            message = "Saving...",
+                            duration = SnackbarDuration.Indefinite
+                        )
+                    }
+                }
+                saveLogJob = scope.launch(Dispatchers.IO) {
+                    val file = saveTerminal()
                     withContext(Dispatchers.Main) {
-                        try {
-                            if (Desktop.isDesktopSupported()) {
-                                Desktop.getDesktop().open(file.parentFile)
+                        terminalLines += StatusLine("Stopped Logging")
+                        saving = false
+                    }
+
+                    savingSnackbarJob.cancel()
+
+                    val result = snackbarState.showSnackbar(
+                        message ="Saved file to ${file.absolutePath}",
+                        actionLabel = "Open",
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        withContext(Dispatchers.Main) {
+                            try {
+                                if (Desktop.isDesktopSupported()) {
+                                    Desktop.getDesktop().open(file.parentFile)
+                                }
+                            } catch (e: Exception) {
+                                println("Failed to open file explorer: ${e.message}")
                             }
-                        } catch (e: Exception) {
-                            println("Failed to open file explorer: ${e.message}")
                         }
                     }
                 }
@@ -57,40 +97,54 @@ class AppController {
         } else {
             if (devices.isEmpty()) {
                 logging = false
-                terminalText += "> No devices connected! Can't start logging.\n"
+                terminalLines += StatusLine("No devices connected! Can't start logging.")
                 return
             }
             logJob = scope.launch(Dispatchers.IO) {
-                val shellStream = devices[selectedDevice].openShell("logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier} *:S")
+                val shellStream = devices[selectedDevice].openShell("logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier}${if (settingsState.logFilter != "*") " *:S" else ""}")
                 try {
+                    val lineBuilder = StringBuilder()
                     while (isActive) {
                         val chunk = shellStream.read().payload
                         val text = chunk.decodeToString()
-                        withContext(Dispatchers.Main) {
-                            terminalText += text
+                        lineBuilder.append(text)
+                        // split into lines and append to terminalLines with LogcatLine("text")
+                        val completeLines = lineBuilder.extractCompleteLines()
+                        if (completeLines.isNotEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                terminalLines += completeLines.map { LogcatLine(it) }
+                            }
                         }
                     }
                 } catch (_: Exception) {
                     withContext(Dispatchers.Main) {
-                        terminalText += "\n> There was an error while reading the logs (Did you unplug the device?)\n"
+                        terminalLines += StatusLine("There was an error while reading the logs (Did you unplug the device?)")
                         logging = false
                     }
                 } finally {
                     shellStream.close()
                 }
             }
-            terminalText += "> Started Logging\n"
+            terminalLines += StatusLine("Started Logging with command \"logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier}${if (settingsState.logFilter != "*") " *:S" else ""}\"")
         }
     }
 
     private fun saveTerminal(): File {
         val file = File(settingsState.logPath)
         file.parentFile?.mkdirs()
-        file.writeText(terminalText)
+        file.writeText("")
+        for (line in terminalLines) {
+            when (line) {
+                is StatusLine -> {}
+                is LogcatLine -> {
+                    file.appendText(line.text + "\n")
+                }
+            }
+        }
         return file
     }
 
     fun clearConsole() {
-        terminalText = ""
+        terminalLines.clear()
     }
 }

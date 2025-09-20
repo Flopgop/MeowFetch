@@ -5,6 +5,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,7 +38,7 @@ import org.jetbrains.jewel.window.styling.TitleBarStyle
 @Preview
 fun App() {
     val controller = remember { AppController() }
-    val verticalScrollState = rememberScrollState()
+    val lazyListState = rememberLazyListState()
     val horizontalScrollState = rememberScrollState()
     var showSettings by remember { mutableStateOf(false) }
 
@@ -60,13 +61,14 @@ fun App() {
                     onRefreshDevices = { controller.refreshDevices() },
                     onToggleLogging = { controller.toggleLogging() },
                     onClearConsole = { controller.clearConsole() },
+                    onShowSettings = { showSettings = true },
                     logging = controller.logging,
-                    onShowSettings = { showSettings = true }
+                    saving = controller.saving,
                 )
 
                 ConsoleView(
-                    terminalText = controller.terminalText,
-                    verticalScrollState = verticalScrollState,
+                    terminalLines = controller.terminalLines,
+                    listState = lazyListState,
                     horizontalScrollState = horizontalScrollState
                 )
             }

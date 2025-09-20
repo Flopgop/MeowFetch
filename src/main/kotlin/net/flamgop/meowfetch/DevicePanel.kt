@@ -21,8 +21,9 @@ fun DevicePanel(
     onRefreshDevices: () -> Unit,
     onToggleLogging: () -> Unit,
     onClearConsole: () -> Unit,
+    onShowSettings: () -> Unit,
     logging: Boolean,
-    onShowSettings: () -> Unit
+    saving: Boolean,
 ) {
     Column(
         modifier = Modifier.fillMaxHeight().width(220.dp),
@@ -44,11 +45,11 @@ fun DevicePanel(
                 Text("Discover Devices")
             }
 
-            Button(onClick = onToggleLogging, modifier = Modifier.fillMaxWidth(), enabled = devices.isNotEmpty()) {
+            Button(onClick = onToggleLogging, modifier = Modifier.fillMaxWidth(), enabled = devices.isNotEmpty() && !saving) {
                 Text(if (logging) "Stop Logging" else "Start Logging")
             }
 
-            Button(onClick = onClearConsole, modifier = Modifier.fillMaxWidth(), enabled = !logging) {
+            Button(onClick = onClearConsole, modifier = Modifier.fillMaxWidth(), enabled = !logging && !saving) {
                 Text("Clear Console")
             }
         }

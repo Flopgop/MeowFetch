@@ -59,17 +59,19 @@ class SettingsState(
     var logLevel by mutableStateOf(initialLogLevel)
 }
 
+fun isStringValidPackage(str: String): Boolean {
+    val packageRegex = Regex(
+        "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+",
+    )
+    return str == "*" || str.matches(packageRegex)
+}
+
 @Composable
 fun PackageTextField(
     logFilter: String,
     onLogFilterChange: (String) -> Unit,
     defaultValue: String = "com.qcxr.qcxr"
 ) {
-    val packageRegex = Regex(
-        "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$",
-        RegexOption.IGNORE_CASE
-    )
-
     var text by remember { mutableStateOf(logFilter) }
     var isFocused by remember { mutableStateOf(false) }
 
@@ -82,7 +84,7 @@ fun PackageTextField(
             .onFocusChanged { focusState ->
                 if (isFocused && !focusState.isFocused) {
                     // focus lost
-                    if (!packageRegex.matches(text)) {
+                    if (!isStringValidPackage(text)) {
                         text = defaultValue // revert to default
                         onLogFilterChange(defaultValue)
                     } else {
@@ -93,12 +95,12 @@ fun PackageTextField(
             },
         label = { Text("Log Filter") },
         placeholder = { Text(defaultValue) },
-        isError = !packageRegex.matches(text),
+        isError = !isStringValidPackage(text),
         singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(
             onDone = {
-                if (!packageRegex.matches(text)) {
+                if (!isStringValidPackage(text)) {
                     text = defaultValue
                     onLogFilterChange(defaultValue)
                 } else {

@@ -73,14 +73,23 @@ fun FancySnackbar(snackbarState: SnackbarHostState) {
                     .padding(horizontal = 16.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CircularProgressIndicator(
-                    progress = { 1 - progress },
-                    strokeWidth = 2.dp,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .scale(-1f, 1f),
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                if (snackbarData.visuals.duration != SnackbarDuration.Indefinite) {
+                    CircularProgressIndicator(
+                        progress = { 1 - progress },
+                        strokeWidth = 2.dp,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .scale(-1f, 1f),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier
+                            .size(24.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
 
                 Spacer(modifier = Modifier.size(20.dp))
 

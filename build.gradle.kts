@@ -16,6 +16,16 @@ repositories {
     google()
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("--enable-preview")
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
+}
+
+tasks.withType<JavaExec>().configureEach {
+    jvmArgs("--enable-preview")
+}
+
 dependencies {
     implementation("org.jetbrains.jewel:jewel-int-ui-standalone:0.30.0-252.26252")
     implementation("org.jetbrains.jewel:jewel-int-ui-decorated-window:0.30.0-252.26252")
@@ -26,12 +36,14 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
 
-    implementation("dev.mobile:dadb:1.2.10")
+//    implementation("dev.mobile:dadb:1.2.10")
 
     implementation("io.github.vinceglb:filekit-core:0.11.0")
     implementation("io.github.vinceglb:filekit-dialogs:0.11.0")
     implementation("io.github.vinceglb:filekit-dialogs-compose:0.11.0")
     implementation("io.github.vinceglb:filekit-coil:0.11.0")
+
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 }
 
 compose.resources {
@@ -43,11 +55,13 @@ compose.resources {
 compose.desktop {
     application {
         mainClass = "net.flamgop.meowfetch.AppKt"
+        args += "--enable-preview"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
             packageName = "meowfetch"
             packageVersion = "1.0.0"
+            includeAllModules = true
         }
     }
 }

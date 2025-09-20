@@ -14,7 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
-import dadb.Dadb
+import kotlinx.coroutines.launch
 import net.flamgop.meowfetch.resources.Res
 import org.jetbrains.compose.resources.painterResource
 
@@ -43,7 +43,8 @@ fun App() {
     var showSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        controller.devices = Dadb.list()
+        controller.adbServer.discoverDevices()
+        controller.devices = controller.adbServer.devices()
     }
 
     Scaffold(

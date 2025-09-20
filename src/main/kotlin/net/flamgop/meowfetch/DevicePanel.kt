@@ -12,12 +12,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import dadb.Dadb
+import net.flamgop.adb.server.device.AdbDevice
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DevicePanel(
-    devices: List<Dadb>,
+    devices: List<AdbDevice>,
     onRefreshDevices: () -> Unit,
     onToggleLogging: () -> Unit,
     onClearConsole: () -> Unit,

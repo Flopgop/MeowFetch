@@ -7,8 +7,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import dadb.Dadb
 import kotlinx.coroutines.*
+import net.flamgop.adb.server.AdbServer
+import net.flamgop.adb.server.device.AdbDevice
 import java.awt.Desktop
 import java.io.File
 
@@ -30,7 +31,7 @@ private fun StringBuilder.extractCompleteLines(): List<String> {
 
 class AppController {
     var snackbarState = SnackbarHostState()
-    var devices by mutableStateOf(listOf<Dadb>())
+    var devices by mutableStateOf(listOf<AdbDevice>())
     var selectedDevice by mutableStateOf(0)
 
     var terminalLines = mutableStateListOf<TerminalLine>(StatusLine("Hello World! You're using Meowfetch v3.0! :3"))
@@ -38,13 +39,17 @@ class AppController {
     var saving by mutableStateOf(false)
     var logging by mutableStateOf(false)
     val settingsState = SettingsState()
+    val adbServer: AdbServer = AdbServer.start()
     private var logJob: Job? = null
     private var saveLogJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
     fun refreshDevices() {
-        devices = Dadb.list()
-        terminalLines += StatusLine(if (devices.isEmpty()) "No Devices Found" else "${devices.size} Device(s) Found")
+        scope.launch(Dispatchers.IO) {
+            adbServer.discoverDevices()
+            devices = adbServer.devices()
+            terminalLines += StatusLine(if (devices.isEmpty()) "No Devices Found" else "${devices.size} Device(s) Found")
+        }
     }
 
     fun selectDevice(device: Int) {
@@ -101,12 +106,12 @@ class AppController {
                 return
             }
             logJob = scope.launch(Dispatchers.IO) {
-                val shellStream = devices[selectedDevice].openShell("logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier}${if (settingsState.logFilter != "*") " *:S" else ""}")
+                val id = devices[selectedDevice].openStream("shell:logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier}${if (settingsState.logFilter != "*") " *:S" else ""}")
+                val iterator = devices[selectedDevice].stream(id).iterator()
                 try {
                     val lineBuilder = StringBuilder()
                     while (isActive) {
-                        val chunk = shellStream.read().payload
-                        val text = chunk.decodeToString()
+                        val text = iterator.next()
                         lineBuilder.append(text)
                         // split into lines and append to terminalLines with LogcatLine("text")
                         val completeLines = lineBuilder.extractCompleteLines()
@@ -122,7 +127,7 @@ class AppController {
                         logging = false
                     }
                 } finally {
-                    shellStream.close()
+                    devices[selectedDevice].closeStream(id)
                 }
             }
             terminalLines += StatusLine("Started Logging with command \"logcat ${settingsState.logFilter}:${settingsState.logLevel.qualifier}${if (settingsState.logFilter != "*") " *:S" else ""}\"")

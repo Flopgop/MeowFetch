@@ -42,11 +42,11 @@ import org.jetbrains.jewel.ui.component.Icon
 @Composable
 fun FancySnackbar(snackbarState: SnackbarHostState) {
     SnackbarHost(snackbarState) { snackbarData ->
-            val durationMillis = when (snackbarData.visuals.duration) {
-        SnackbarDuration.Indefinite -> Long.MAX_VALUE
-        SnackbarDuration.Long -> 10000L
-        SnackbarDuration.Short -> 4000L
-    }
+        val durationMillis = when (snackbarData.visuals.duration) {
+            SnackbarDuration.Indefinite -> Long.MAX_VALUE
+            SnackbarDuration.Long -> 10000L
+            SnackbarDuration.Short -> 4000L
+        }
         var progress by remember { mutableStateOf(1f) }
 
         LaunchedEffect(snackbarData) {
@@ -60,69 +60,68 @@ fun FancySnackbar(snackbarState: SnackbarHostState) {
         }
 
         Row(
-                modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                ) {
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
             Row(
-                    modifier = Modifier
-                            .wrapContentWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 16.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 CircularProgressIndicator(
-                        progress = { 1 - progress },
-                        strokeWidth = 2.dp,
-                        modifier = Modifier
-                                .size(24.dp)
-                                .scale(-1f, 1f),
-                        color = MaterialTheme.colorScheme.primary,
-                        )
+                    progress = { 1 - progress },
+                    strokeWidth = 2.dp,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .scale(-1f, 1f),
+                    color = MaterialTheme.colorScheme.primary,
+                )
 
                 Spacer(modifier = Modifier.size(20.dp))
 
                 Text(
-                        text = snackbarData.visuals.message,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    text = snackbarData.visuals.message,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 Spacer(modifier = Modifier.size(20.dp))
 
                 snackbarData.visuals.actionLabel?.let { label ->
-                        Button(
-                                onClick = { snackbarData.performAction() },
-                                colors = ButtonDefaults.textButtonColors(),
-                                elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp, 0.dp, 0.dp),
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp)
-                        ) {
-                    Text(label, color = MaterialTheme.colorScheme.primary)
-                }
+                    Button(
+                        onClick = { snackbarData.performAction() },
+                        colors = ButtonDefaults.textButtonColors(),
+                        elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp, 0.dp, 0.dp),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp)
+                    ) {
+                        Text(label, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
 
                 Box(
-                        modifier =
-                                Modifier
-                                        .size(36.dp)
-                                        .minimumInteractiveComponentSize()
-                                        .clickable(
-                                                onClick = { snackbarData.dismiss() },
-                                                enabled = true,
-                                                role = Role.Button,
-                                                interactionSource = null,
-                                                indication = ripple(bounded = false, radius = 18.dp, color = MaterialTheme.colorScheme.tertiary),
-                                                ),
-                        contentAlignment = Alignment.Center,
-                        ) {
+                    modifier = Modifier
+                        .size(36.dp)
+                        .minimumInteractiveComponentSize()
+                        .clickable(
+                            onClick = { snackbarData.dismiss() },
+                            enabled = true,
+                            role = Role.Button,
+                            interactionSource = null,
+                            indication = ripple(bounded = false, radius = 18.dp, color = MaterialTheme.colorScheme.tertiary),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
                     val contentAlpha = LocalContentAlpha.current
                     CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = {
-                            Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Dismiss",
-                                    )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                        )
                     })
                 }
             }

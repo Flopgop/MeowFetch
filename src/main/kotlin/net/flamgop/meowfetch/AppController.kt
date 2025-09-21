@@ -42,13 +42,19 @@ class AppController {
     val adbServer: AdbServer = AdbServer.start()
     private var logJob: Job? = null
     private var saveLogJob: Job? = null
+    private var discoverDevicesJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
     fun refreshDevices() {
-        scope.launch(Dispatchers.IO) {
+        if (discoverDevicesJob != null && !discoverDevicesJob!!.isCompleted) return // already refreshing
+        discoverDevicesJob = scope.launch(Dispatchers.IO) {
             adbServer.discoverDevices()
-            devices = adbServer.devices()
-            terminalLines += StatusLine(if (devices.isEmpty()) "No Devices Found" else "${devices.size} Device(s) Found")
+            val foundDevices = adbServer.devices()
+            scope.launch(Dispatchers.Main) {
+                devices = foundDevices
+                terminalLines += StatusLine(if (devices.isEmpty()) "No Devices Found" else "${devices.size} Device(s) Found")
+                discoverDevicesJob = null
+            }
         }
     }
 

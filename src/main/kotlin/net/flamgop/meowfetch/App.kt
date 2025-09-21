@@ -42,10 +42,6 @@ fun App() {
     val horizontalScrollState = rememberScrollState()
     var showSettings by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        controller.adbServer.discoverDevices()
-        controller.devices = controller.adbServer.devices()
-    }
 
     Scaffold(
         snackbarHost = { FancySnackbar(controller.snackbarState) }
